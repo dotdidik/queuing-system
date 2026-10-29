@@ -4,7 +4,9 @@
 
 [functions]
   directory = "netlify/functions"
-  node_bundler = "nft"
+  # esbuild menggabungkan semua file jadi satu bundle. Bundler "nft" mengubah tiap file ESM ke
+  # CommonJS secara terpisah, dan itu merusak `export default` antar file (app.use menerima objek).
+  node_bundler = "esbuild"
 
 [[redirects]]
   from = "/api/*"
