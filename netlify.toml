@@ -1,0 +1,13 @@
+[build]
+  # Situs ini hanya API; folder public berisi halaman kecil agar source code tidak ikut dipublikasikan.
+  publish = "public"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "nft"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true

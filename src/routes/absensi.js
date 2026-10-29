@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { pool } from "../db.js";
+import { HARI_INI, JAM_SEKARANG, TIMEZONE, pool } from "../db.js";
 import { authenticate, requireAdmin } from "../middleware/auth.js";
 import { LOKASI_KANTOR, jarakMeter, parseKoordinat } from "../lokasi.js";
 
@@ -12,7 +12,7 @@ const BULAN_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
 const TANGGAL_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 const currentMonth = () =>
-  new Date().toLocaleDateString("en-CA", { timeZone: process.env.APP_TIMEZONE || "Asia/Jakarta" }).slice(0, 7);
+  new Date().toLocaleDateString("en-CA", { timeZone: TIMEZONE }).slice(0, 7);
 
 // Mengirim respons error dan mengembalikan null bila lokasi tidak valid / di luar radius.
 function cekLokasi(req, res) {
@@ -37,9 +37,9 @@ function cekLokasi(req, res) {
 
 router.get("/hari-ini", async (req, res) => {
   const { rows } = await pool.query(
-    `SELECT CURRENT_DATE AS tanggal, to_jsonb(a) AS absensi
+    `SELECT ${HARI_INI} AS tanggal, to_jsonb(a) AS absensi
      FROM (SELECT 1) AS dummy
-     LEFT JOIN absensi a ON a.user_id = $1 AND a.tanggal = CURRENT_DATE`,
+     LEFT JOIN absensi a ON a.user_id = $1 AND a.tanggal = ${HARI_INI}`,
     [req.user.id]
   );
   res.json({
@@ -56,8 +56,8 @@ router.post("/masuk", async (req, res) => {
 
   const { rows } = await pool.query(
     `INSERT INTO absensi (user_id, tanggal, jam_masuk, status, lat_masuk, lng_masuk, jarak_masuk, akurasi_masuk)
-     VALUES ($1, CURRENT_DATE, now(),
-             CASE WHEN LOCALTIME > $2::time THEN 'terlambat' ELSE 'hadir' END,
+     VALUES ($1, ${HARI_INI}, now(),
+             CASE WHEN ${JAM_SEKARANG} > $2::time THEN 'terlambat' ELSE 'hadir' END,
              $3, $4, $5, $6)
      ON CONFLICT (user_id, tanggal) DO NOTHING
      RETURNING *`,
@@ -76,7 +76,7 @@ router.post("/pulang", async (req, res) => {
   const { rows } = await pool.query(
     `UPDATE absensi
        SET jam_pulang = now(), lat_pulang = $2, lng_pulang = $3, jarak_pulang = $4, akurasi_pulang = $5
-     WHERE user_id = $1 AND tanggal = CURRENT_DATE AND jam_masuk IS NOT NULL AND jam_pulang IS NULL
+     WHERE user_id = $1 AND tanggal = ${HARI_INI} AND jam_masuk IS NOT NULL AND jam_pulang IS NULL
      RETURNING *`,
     [req.user.id, posisi.lat, posisi.lng, posisi.jarak, posisi.akurasi]
   );
@@ -113,7 +113,7 @@ router.get("/harian", requireAdmin, async (req, res) => {
             a.lat_masuk, a.lng_masuk, a.jarak_masuk, a.akurasi_masuk,
             a.lat_pulang, a.lng_pulang, a.jarak_pulang, a.akurasi_pulang
      FROM users u
-     LEFT JOIN absensi a ON a.user_id = u.id AND a.tanggal = COALESCE($1::date, CURRENT_DATE)
+     LEFT JOIN absensi a ON a.user_id = u.id AND a.tanggal = COALESCE($1::date, ${HARI_INI})
      WHERE u.aktif
      ORDER BY u.unit NULLS LAST, u.nama`,
     [tanggal || null]
@@ -161,7 +161,7 @@ router.get("/rekap", requireAdmin, async (req, res) => {
             COUNT(a.id) FILTER (WHERE a.status = 'cuti')::int       AS cuti,
             COUNT(a.id) FILTER (WHERE a.status = 'dinas_luar')::int AS dinas_luar,
             COUNT(a.id) FILTER (WHERE a.jam_masuk IS NOT NULL AND a.jam_pulang IS NULL
-                                  AND a.tanggal < CURRENT_DATE)::int AS tidak_absen_pulang
+                                  AND a.tanggal < ${HARI_INI})::int AS tidak_absen_pulang
      FROM users u
      LEFT JOIN absensi a ON a.user_id = u.id
            AND a.tanggal >= $1::date AND a.tanggal < $1::date + INTERVAL '1 month'
