@@ -16,5 +16,32 @@ for (const u of users) {
   );
 }
 
+const poli = [
+  { kode: "A", nama: "Poli Umum" },
+  { kode: "B", nama: "Poli Gigi" },
+  { kode: "C", nama: "Poli KIA" }
+];
+for (const p of poli) {
+  await pool.query("INSERT INTO poli (kode, nama) VALUES ($1, $2) ON CONFLICT (kode) DO NOTHING", [p.kode, p.nama]);
+}
+
+// Contoh tenaga medis hanya dibuat bila tabel masih kosong, agar seed aman dijalankan ulang.
+const { rows: adaTenagaMedis } = await pool.query("SELECT 1 FROM tenaga_medis LIMIT 1");
+if (!adaTenagaMedis.length) {
+  const tenagaMedis = [
+    { nama: "dr. Siti Rahmawati", jenis: "dokter", poli: "A", hari: [1, 2, 3] },
+    { nama: "dr. Ahmad Fauzi", jenis: "dokter", poli: "A", hari: [4, 5, 6] },
+    { nama: "drg. Rina Kartika", jenis: "dokter_gigi", poli: "B", hari: [1, 2, 3, 4, 5, 6] },
+    { nama: "Ani Lestari, A.Md.Keb", jenis: "bidan", poli: "C", hari: [1, 2, 3, 4, 5, 6] }
+  ];
+  for (const t of tenagaMedis) {
+    await pool.query(
+      `INSERT INTO tenaga_medis (nama, jenis, poli_id, hari_piket)
+       SELECT $1, $2, id, $4 FROM poli WHERE kode = $3`,
+      [t.nama, t.jenis, t.poli, t.hari]
+    );
+  }
+}
+
 console.log("Data awal dibuat. Login admin: admin / admin123, pegawai: <NIP> / pegawai123");
 await pool.end();

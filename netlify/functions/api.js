@@ -13,6 +13,8 @@ function parseJsonBody(req) {
 }
 
 export const handler = serverless(app, {
+  // Foto tenaga medis dikirim sebagai gambar biner.
+  binary: ["image/*"],
   request(req) {
     // Redirect di netlify.toml meneruskan /api/* ke function ini; kembalikan path ke bentuk /api/*
     // yang dikenali routes Express, apa pun bentuk path yang diterima function.

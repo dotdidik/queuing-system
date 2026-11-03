@@ -35,9 +35,14 @@ netlify.toml               /api/* → function
    dikosongkan; pengaturan lain dibaca dari `netlify.toml`.
 4. **Environment variables** (Site configuration → Environment variables): `DATABASE_URL`,
    `JWT_SECRET` (buat baru), `APP_TIMEZONE`, `JAM_MASUK_BATAS`, `PUSKESMAS_LAT`, `PUSKESMAS_LNG`,
-   `RADIUS_METER`. `PORT` tidak perlu diisi.
+   `RADIUS_METER`. `PORT` tidak perlu diisi. Opsional untuk antrean: `JAM_LAYANAN_MULAI`,
+   `JAM_LAYANAN_SELESAI`, `SLOT_MENIT`, `KUOTA_PER_SLOT`, `HARI_DAFTAR_MAKS` (lihat `.env.example`).
 5. Deploy ulang, lalu cek `https://<nama-situs>.netlify.app/api/health` → `{"ok":true}`.
 6. Login sebagai `admin` dan **segera ganti password `admin123`**.
+
+**Memperbarui database yang sudah berjalan** (mis. setelah fitur antrean ditambahkan): jalankan lagi
+`npm run db:migrate` dengan `DATABASE_URL` Supabase. Skemanya memakai `IF NOT EXISTS`, jadi aman dan tidak
+menghapus data. `npm run db:seed` juga aman diulang; isinya menambah contoh poli dan dokter/bidan bila belum ada.
 
 ## Catatan
 

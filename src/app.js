@@ -3,6 +3,11 @@ import express from "express";
 import authRoutes from "./routes/auth.js";
 import pegawaiRoutes from "./routes/pegawai.js";
 import absensiRoutes from "./routes/absensi.js";
+import poliRoutes from "./routes/poli.js";
+import tenagaMedisRoutes from "./routes/tenagaMedis.js";
+import pasienRoutes from "./routes/pasien.js";
+import antreanRoutes from "./routes/antrean.js";
+import antreanAdminRoutes from "./routes/antreanAdmin.js";
 import { TIMEZONE } from "./db.js";
 import { LOKASI_KANTOR } from "./lokasi.js";
 
@@ -18,12 +23,18 @@ try {
 }
 
 const app = express();
-app.use(express.json());
+// Batas 1 MB karena foto tenaga medis dikirim sebagai data URL.
+app.use(express.json({ limit: "1mb" }));
 
 app.get("/api/health", (_req, res) => res.json({ ok: true }));
 app.use("/api/auth", authRoutes);
 app.use("/api/pegawai", pegawaiRoutes);
 app.use("/api/absensi", absensiRoutes);
+app.use("/api/poli", poliRoutes);
+app.use("/api/tenaga-medis", tenagaMedisRoutes);
+app.use("/api/pasien", pasienRoutes);
+app.use("/api/antrean", antreanRoutes);
+app.use("/api/admin/antrean", antreanAdminRoutes);
 
 app.use((_req, res) => res.status(404).json({ message: "Endpoint tidak ditemukan" }));
 
